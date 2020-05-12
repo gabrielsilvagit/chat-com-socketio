@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+      integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+      crossorigin="anonymous"
+    />
+    <title>Chat com socketIO</title>
+    <style>
+      .box {
+        padding-top: 100px;
+        width: 100%;
+        max-width: 335px;
+        height: 700px;
+        margin: auto;
+      }
+      .header {
+        display: flex;
+        align-items: end;
+        width: 100%;
+        height: 10%;
+        border: 2px solid black;
+        border-bottom: none;
+        background: rgb(56, 56, 56);
+        color: #fff;
+      }
+      span {
+        height: 50%;
+        width: 100%;
+      }
+      .chat {
+        height: 77%;
+        max-height: 77%;
+        width: 100%;
+        border: 2px solid black;
+        background-image: url(https://i.pinimg.com/236x/e9/08/a5/e908a5bd5add462362faedb5e0502354--walls.jpg);
+        border-bottom: none;
+        overflow: auto;
+      }
+      .inputText {
+        background-image: url(https://i.pinimg.com/236x/e9/08/a5/e908a5bd5add462362faedb5e0502354--walls.jpg);
+        display: flex;
+        border-style: solid;
+        border: 2px solid black;
+        border-top: none;
+      }
+      input {
+        width: 100%;
+        border-radius: 16px;
+        margin-left: 5px;
+        margin-bottom: 5px;
+        background: rgb(56, 56, 56);
+        color: #fff;
+        padding-left: 10px;
+      }
+      .btn {
+        width: 10%;
+        border-radius: 50%;
+        background: rgb(3, 78, 53);
+        margin-left: 10px;
+        margin-bottom: 5px;
+        margin-right: 5px;
+        color: #fff;
+        border: none;
+      }
+      ul {
+        list-style-type: none;
+        width: 100%;
+        word-break: break-all;
+      }
+      li {
+        padding: 5px 10px;
+        background-color: rgb(56, 56, 56);
+        color: #fff;
+        margin-top: 10px;
+        margin-right: 35px;
+        margin-left: -40px;
+      }
+      ::placeholder {
+        color: #ddd;
+        opacity: 0.8;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="box">
+      <div class="header">
+        <div
+          class="row"
+          style="width: 100%; margin-right: 0px; margin-left: 0px;"
+        >
+          <div class="col-2">
+            <img
+              width="48px"
+              height="48px"
+              src="https://blog.unifoa.edu.br/wp-content/uploads/2017/03/enem-2017-saiba-como-planejar-o-seu-ano-de-estudos-810x810.jpeg"
+              style="
+                border-radius: 50%;
+                margin-top: 5px;
+                position: absolute;
+                left: 5px;
+              "
+            />
+          </div>
+          <div class="col-6" style="margin-top: 2px;">
+            <div
+              class="row"
+              style="width: 100%; margin-right: 0px; margin-left: 0px;"
+            >
+              <span>Grupo da APS</span>
+            </div>
+            <div
+              class="row"
+              style="width: 100%; margin-right: 0px; margin-left: 0px;"
+            >
+              <p style="font-size: small;">Allan, Gabriel e Luan</p>
+            </div>
+          </div>
+          <div class="col-4">
+            <div
+              class="row"
+              style="width: 100%; margin-right: 0px; margin-left: 0px;"
+            >
+              <i
+                class="fas fa-video"
+                style="margin-right: 10px; margin-top: 18px; margin-left: 10px;"
+              ></i>
+              <i
+                class="fas fa-phone-alt"
+                style="margin-right: 10px; margin-top: 18px;"
+              ></i>
+              <i class="fas fa-ellipsis-v" style="margin-top: 18px;"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!--  Lista de mensagens -->
+      <div class="chat">
+        <ul class="ul" id="messages"></ul>
+      </div>
+      <!--  input com e botão de submit-->
+
+      <div class="inputText">
+        <input
+          class="text"
+          autofocus=""
+          id="menssagem"
+          autocomplete="off"
+          placeholder="Digite uma mensagem"
+        />
+        <button class="btn" id="enviar_menssagem">
+          <i class="fas fa-paper-plane" style="margin-left: -5px;"></i>
+        </button>
+      </div>
+    </div>
+
+    <!--  importar o client do socketIO-->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      // faz com que seja possível enviar mensagens com Enter
+      document
+        .getElementById("menssagem")
+        .addEventListener("keypress", function (e) {
+          var key = e.which || e.keyCode;
+          if (key == 13) {
+            enviar_menssagem();
+          }
+        });
+      // inicia o client socketIO
+      var socket = io();
+      // Abre um popup perguntando o nome da pessoa
+      var nome_usuario = prompt("Qual seu nome?");
+      // Lista com alguns nomes do Final Fantasy
+      var ff = [
+        "Cloud Strife",
+        "Sephiroth",
+        "Vincent Valentine",
+        "Zack Fair",
+        "Aerith Gainsborough",
+        "Tifa Lockhart",
+        "Barret Wallace",
+        "Yuffie Kisaragi",
+      ];
+      // Caso usuário não informe um nome será atribuido um nome aleatório da lista
+      if (nome_usuario === null || nome_usuario == "" || nome_usuario == " ") {
+        nome_usuario = ff[Math.floor(Math.random() * ff.length)];
+      }
+
+      // adiciona um addEventListener para o botão de submit
+      document
+        .getElementById("enviar_menssagem")
+        .addEventListener("click", enviar_menssagem);
+      // cria a função que conecta no websocket e emite a mensagem
+      function enviar_menssagem() {
+        // salva a mensagem como uma string
+        msg = document.getElementById("menssagem").value;
+        if (msg.length > 0) {
+          // concatena o nome de usuário e a mensagem para enviar ao socketIo
+          socket.emit("chat message", nome_usuario + ": " + msg);
+          // reseta o valor do input da mensagem
+          document.getElementById("menssagem").value = "";
+        }
+      }
+
+      function inserir_nome() {
+        alert("teste");
+      }
+      // sempre que receber uma mensagem ela é adicionada a lista
+      socket.on("chat message", function (msg) {
+        // busca o elemento UL
+        let ul = document.getElementById("messages");
+        // cria um elemento LI
+        let li = document.createElement("li");
+        // cria o elemento de quebra de linha
+        let br = document.createElement("br");
+        li.appendChild(document.createTextNode(msg));
+        // var att = document.createAttribute("class");
+        // att.value = nome_usuario;
+        // li.setAttributeNode(att);
+        // adicionar o nome do usuário quebra a linha e adicionar a mensagem à lista de mensagems
+        ul.appendChild(li);
+      });
+    </script>
+    <script
+      src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+      integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+      integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+      integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://kit.fontawesome.com/ce79529b18.js"
+      crossorigin="anonymous"
+    ></script>
+  </body>
+</html>
